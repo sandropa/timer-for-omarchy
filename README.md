@@ -15,7 +15,9 @@ Add to your Waybar config (`~/.config/waybar/config.jsonc`):
 "custom/timer": {
     "exec": "cat /tmp/timer-status",
     "interval": 1,
-    "format": "{}"
+    "return-type": "json",
+    "signal": 8,
+    "on-click": "timer toggle"
 }
 ```
 
@@ -25,6 +27,9 @@ Also add this to your Waybar `style.css` file (`~/config/waybar/style.css`)
 ```css
 #custom-timer {
   margin-right: 30px;
+}
+#custom-timer.paused {
+  color: #888;
 }
 ```
 

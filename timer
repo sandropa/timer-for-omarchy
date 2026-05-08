@@ -13,6 +13,10 @@ format_hms() {
     printf "%02d:%02d:%02d" $(( $1 / 3600 )) $(( $1 % 3600 / 60 )) $(( $1 % 60 ))
 }
 
+notify_waybar() {
+    pkill -RTMIN+8 waybar 2>/dev/null
+}
+
 if [[ "$1" == "stop" ]]; then
     if [[ -f $PID_FILE ]]; then
         kill "$(cat $PID_FILE)" 2>/dev/null
@@ -49,10 +53,14 @@ if [[ "$1" == "toggle" ]]; then
     if [[ "$mode" == "running" ]]; then
         remaining=$(( value - now ))
         echo "paused $remaining" > "$STATE_FILE"
+        printf '{"text":"%s","class":"paused"}\n' "$(format_hm $remaining)" > "$STATUS_FILE"
+        notify_waybar
         echo "Paused at $(format_hms $remaining)."
     else
         end_time=$(( now + value ))
         echo "running $end_time" > "$STATE_FILE"
+        printf '{"text":"%s"}\n' "$(format_hm $value)" > "$STATUS_FILE"
+        notify_waybar
         echo "Resumed. $(format_hms $value) remaining."
     fi
     exit 0
@@ -69,6 +77,8 @@ if [[ "$1" =~ ^[0-9]+$ ]]; then
 
     end_time=$(( $(date +%s) + minutes * 60 ))
     echo "running $end_time" > "$STATE_FILE"
+    printf '{"text":"%s"}\n' "$(format_hm $((minutes * 60)))" > "$STATUS_FILE"
+    notify_waybar
 
     (
         while [[ -f $STATE_FILE ]]; do
@@ -81,9 +91,9 @@ if [[ "$1" =~ ^[0-9]+$ ]]; then
                     rm -f "$STATUS_FILE" "$PID_FILE" "$STATE_FILE"
                     break
                 fi
-                format_hm $remaining > "$STATUS_FILE"
+                printf '{"text":"%s"}\n' "$(format_hm $remaining)" > "$STATUS_FILE"
             else
-                format_hm $value > "$STATUS_FILE"
+                printf '{"text":"%s","class":"paused"}\n' "$(format_hm $value)" > "$STATUS_FILE"
             fi
             sleep 1
         done
