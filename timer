@@ -1,12 +1,59 @@
 #!/usr/bin/env bash
 
+PID_FILE=/tmp/timer-pid
+STATE_FILE=/tmp/timer-state
+STATUS_FILE=/tmp/timer-status
+
+format_hm() {
+    local total_mins=$(( ($1 + 59) / 60 ))
+    printf "%02d:%02d" $(( total_mins / 60 )) $(( total_mins % 60 ))
+}
+
+format_hms() {
+    printf "%02d:%02d:%02d" $(( $1 / 3600 )) $(( $1 % 3600 / 60 )) $(( $1 % 60 ))
+}
+
 if [[ "$1" == "stop" ]]; then
-    if [[ -f /tmp/timer-pid ]]; then
-        kill "$(cat /tmp/timer-pid)" 2>/dev/null
-        rm -f /tmp/timer-pid /tmp/timer-status
+    if [[ -f $PID_FILE ]]; then
+        kill "$(cat $PID_FILE)" 2>/dev/null
+        rm -f "$PID_FILE" "$STATE_FILE" "$STATUS_FILE"
         echo "Timer stopped."
     else
         echo "No timer running."
+    fi
+    exit 0
+fi
+
+if [[ "$1" == "status" ]]; then
+    if [[ ! -f $STATE_FILE ]]; then
+        echo "No timer running."
+        exit 1
+    fi
+    read -r mode value < "$STATE_FILE"
+    if [[ "$mode" == "running" ]]; then
+        remaining=$(( value - $(date +%s) ))
+        echo "$(format_hms $remaining) remaining."
+    else
+        echo "$(format_hms $value) remaining (paused)."
+    fi
+    exit 0
+fi
+
+if [[ "$1" == "toggle" ]]; then
+    if [[ ! -f $STATE_FILE ]]; then
+        echo "No timer running."
+        exit 1
+    fi
+    read -r mode value < "$STATE_FILE"
+    now=$(date +%s)
+    if [[ "$mode" == "running" ]]; then
+        remaining=$(( value - now ))
+        echo "paused $remaining" > "$STATE_FILE"
+        echo "Paused at $(format_hms $remaining)."
+    else
+        end_time=$(( now + value ))
+        echo "running $end_time" > "$STATE_FILE"
+        echo "Resumed. $(format_hms $value) remaining."
     fi
     exit 0
 fi
@@ -15,38 +62,37 @@ if [[ "$1" =~ ^[0-9]+$ ]]; then
     minutes=$1
 
     # Kill existing timer if running
-    if [[ -f /tmp/timer-pid ]]; then
-        kill "$(cat /tmp/timer-pid)" 2>/dev/null
-        rm -f /tmp/timer-pid /tmp/timer-status
+    if [[ -f $PID_FILE ]]; then
+        kill "$(cat $PID_FILE)" 2>/dev/null
+        rm -f "$PID_FILE" "$STATE_FILE" "$STATUS_FILE"
     fi
 
     end_time=$(( $(date +%s) + minutes * 60 ))
+    echo "running $end_time" > "$STATE_FILE"
 
     (
-        while true; do
-            now=$(date +%s)
-            remaining=$(( end_time - now )) # in seconds
-
-            if (( remaining <= 0 )); then
-                notify-send "Time's up!"
-                paplay /usr/share/sounds/freedesktop/stereo/complete.oga
-                rm -f /tmp/timer-status /tmp/timer-pid
-                break
+        while [[ -f $STATE_FILE ]]; do
+            read -r mode value < "$STATE_FILE"
+            if [[ "$mode" == "running" ]]; then
+                remaining=$(( value - $(date +%s) ))
+                if (( remaining <= 0 )); then
+                    notify-send "Time's up!"
+                    paplay /usr/share/sounds/freedesktop/stereo/complete.oga
+                    rm -f "$STATUS_FILE" "$PID_FILE" "$STATE_FILE"
+                    break
+                fi
+                format_hm $remaining > "$STATUS_FILE"
+            else
+                format_hm $value > "$STATUS_FILE"
             fi
-
-            total_mins=$(( (remaining + 59) / 60 )) # round up
-            hours=$(( total_mins / 3600 ))
-            mins=$(( total_mins % 60 ))
-
-            printf "%02d:%02d" "$hours" "$mins" > /tmp/timer-status
             sleep 1
         done
-    ) & 
+    ) &
 
-    echo $! > /tmp/timer-pid
+    echo $! > "$PID_FILE"
     disown
     echo "Timer set for ${minutes} minutes."
     exit 0
 fi
 
-echo "Usage: timer <minutes> | stop"
+echo "Usage: timer <minutes> | toggle | status | stop"

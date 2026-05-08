@@ -35,8 +35,7 @@ Restart Waybar for config changes to take effect: `omarchy restart waybar`.
 | Command | Description |
 |---|---|
 | `timer <minutes>` | Start a timer (replaces any running timer) |
-| `timer pause` | Pause the current timer |
-| `timer resume` | Resume a paused timer |
+| `timer toggle` | Pause or resume the current timer |
 | `timer status` | Show remaining time (HH:MM:SS) |
 | `timer stop` | Stop and clear the timer |
 
@@ -47,8 +46,8 @@ Waybar displays time as HH:MM. The `status` command gives HH:MM:SS.
 ```sh
 timer 90             # start a 90-minute timer
 timer 25             # restart with a new 25-minute timer
-timer pause          # Paused at 01:23:41
-timer resume         # Resumed. 01:23:41 remaining
+timer toggle         # Paused at 01:23:41
+timer toggle         # Resumed. 01:23:41 remaining
 timer status         # 00:03:15 remaining
 timer stop           # Timer stopped.
 ```
