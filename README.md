@@ -9,17 +9,26 @@ git clone https://github.com/sandropa/timer-for-omarchy.git ~/.local/src/timer-f
 ln -s ~/.local/src/timer-for-omarchy/timer ~/.local/bin/timer
 ```
 
-Add to your Waybar config (`~/.config/waybar/config`):
+Add to your Waybar config (`~/.config/waybar/config.jsonc`):
 
 ```jsonc
 "custom/timer": {
-    "exec": "cat /tmp/timer-status 2>/dev/null",
+    "exec": "cat /tmp/timer-status",
     "interval": 1,
     "format": "{}"
 }
 ```
 
-Then add `"custom/timer"` to `modules-left`, `modules-center`, or `modules-right` to place it on your bar.
+Then add `"custom/timer"` to `modules-right` to place it on your bar. 
+
+Also add this to your Waybar `style.css` file (`~/config/waybar/style.css`)
+```css
+#custom-timer {
+  margin-right: 30px;
+}
+```
+
+Restart Waybar for config changes to take effect: `omarchy restart waybar`.
 
 ## Usage
 

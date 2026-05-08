@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "stop" ]]; then
+    if [[ -f /tmp/timer-pid ]]; then
+        kill "$(cat /tmp/timer-pid)" 2>/dev/null
+        rm -f /tmp/timer-pid /tmp/timer-status
+        echo "Timer stopped."
+    else
+        echo "No timer running."
+    fi
+    exit 0
+fi
+
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    minutes=$1
+
+    # Kill existing timer if running
+    if [[ -f /tmp/timer-pid ]]; then
+        kill "$(cat /tmp/timer-pid)" 2>/dev/null
+        rm -f /tmp/timer-pid /tmp/timer-status
+    fi
+
+    end_time=$(( $(date +%s) + minutes * 60 ))
+
+    (
+        while true; do
+            now=$(date +%s)
+            remaining=$(( end_time - now )) # in seconds
+
+            if (( remaining <= 0 )); then
+                notify-send "Time's up!"
+                paplay /usr/share/sounds/freedesktop/stereo/complete.oga
+                rm -f /tmp/timer-status /tmp/timer-pid
+                break
+            fi
+
+            total_mins=$(( (remaining + 59) / 60 )) # round up
+            hours=$(( total_mins / 3600 ))
+            mins=$(( total_mins % 60 ))
+
+            printf "%02d:%02d" "$hours" "$mins" > /tmp/timer-status
+            sleep 1
+        done
+    ) & 
+
+    echo $! > /tmp/timer-pid
+    disown
+    echo "Timer set for ${minutes} minutes."
+    exit 0
+fi
+
+echo "Usage: timer <minutes> | stop"
