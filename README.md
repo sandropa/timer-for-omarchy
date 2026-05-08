@@ -23,7 +23,7 @@ Add to your Waybar config (`~/.config/waybar/config.jsonc`):
 
 Then add `"custom/timer"` to `modules-right` to place it on your bar. 
 
-Also add this to your Waybar `style.css` file (`~/config/waybar/style.css`)
+Also add this to your Waybar `style.css` file (`~/.config/waybar/style.css`)
 ```css
 #custom-timer {
   margin-right: 30px;
