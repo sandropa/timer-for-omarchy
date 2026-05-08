@@ -29,7 +29,7 @@ Also add this to your Waybar `style.css` file (`~/config/waybar/style.css`)
   margin-right: 30px;
 }
 #custom-timer.paused {
-  color: #888;
+  opacity: 0.5;
 }
 ```
 
