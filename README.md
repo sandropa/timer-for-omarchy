@@ -56,3 +56,4 @@ timer toggle         # Resumed. 01:23:41 remaining
 timer status         # 00:03:15 remaining
 timer stop           # Timer stopped.
 ```
+You can also click on the timer in the Waybar to pause/resume.
